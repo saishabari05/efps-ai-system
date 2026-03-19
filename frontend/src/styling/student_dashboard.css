@@ -1,0 +1,329 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  --bg-deep: #0d2b45;
+  --bg-mid: #145374;
+  --bg-glow: #2f7aa0;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface-strong: #ffffff;
+  --text-main: #0f172a;
+  --text-soft: #475569;
+  --line: #dbe6f0;
+  --good: #0d9488;
+  --warn: #d97706;
+  --critical: #dc2626;
+  --excellent: #0f766e;
+}
+
+.dashboard-container {
+  min-height: 100vh;
+  background:
+    radial-gradient(1000px 500px at 12% -10%, rgba(255, 255, 255, 0.18) 0%, transparent 55%),
+    radial-gradient(700px 420px at 90% 8%, rgba(255, 255, 255, 0.12) 0%, transparent 58%),
+    linear-gradient(120deg, var(--bg-deep) 0%, var(--bg-mid) 55%, var(--bg-glow) 100%);
+  position: relative;
+  overflow-x: hidden;
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+.dashboard-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.navbar-content {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-title {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #12324d;
+}
+
+.navbar-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.badge-item {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.badge-item:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
+}
+
+.badge-alert {
+  background: #ffe3e3;
+  color: #991b1b;
+}
+
+.badge-recommendation {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.badge-logout {
+  background: #e0ecff;
+  color: #123e78;
+}
+
+.dashboard-main {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1.7rem 1.5rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 20px;
+  padding: 1.7rem 1.8rem;
+  margin-bottom: 1.45rem;
+  box-shadow: 0 14px 34px rgba(9, 28, 43, 0.2);
+  animation: liftIn 0.46s ease;
+}
+
+.welcome-title {
+  margin: 0;
+  color: #f8fbff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.95rem;
+  line-height: 1.1;
+}
+
+.student-info {
+  margin-top: 0.45rem;
+  color: rgba(248, 251, 255, 0.88);
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+
+.state-loading,
+.state-empty {
+  border-radius: 14px;
+  background: var(--surface);
+  color: #1e293b;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.1rem;
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 20px rgba(11, 30, 47, 0.12);
+}
+
+.academic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.academic-card {
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  padding: 1rem 1.05rem;
+  border-left: 5px solid transparent;
+  box-shadow: 0 10px 22px rgba(11, 30, 47, 0.1);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  animation: riseIn 0.4s ease;
+}
+
+.academic-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 26px rgba(11, 30, 47, 0.14);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.04rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.card-pill {
+  font-size: 0.68rem;
+  padding: 0.24rem 0.55rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  background: #e5efff;
+  color: #244777;
+}
+
+.card-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.card-excellent { border-left-color: var(--excellent); }
+.card-good { border-left-color: var(--good); }
+.card-warning { border-left-color: var(--warn); }
+.card-critical { border-left-color: var(--critical); }
+
+.chart-card {
+  background: var(--surface-strong);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 12px 24px rgba(11, 30, 47, 0.13);
+}
+
+.chart-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.06rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.reason-card {
+  margin-bottom: 1.2rem;
+}
+
+.notifications-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1rem;
+}
+
+.notification-card {
+  background: var(--surface-strong);
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  box-shadow: 0 11px 22px rgba(11, 30, 47, 0.12);
+}
+
+.alert-card {
+  border-left: 5px solid var(--critical);
+}
+
+.recommendation-card {
+  border-left: 5px solid var(--good);
+}
+
+.reason-card {
+  border-left: 5px solid #3b82f6;
+}
+
+.notification-header h3 {
+  margin: 0 0 0.8rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+}
+
+.notification-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.notification-item {
+  margin: 0;
+  border-radius: 10px;
+  background: #f3f8ff;
+  color: var(--text-soft);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e2ebf5;
+  line-height: 1.4;
+  font-size: 0.92rem;
+}
+
+@keyframes liftIn {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-title {
+    font-size: 1.1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.6rem;
+  }
+
+  .student-info {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar-content {
+    padding: 0.8rem 0.85rem;
+  }
+
+  .dashboard-main {
+    padding: 1rem 0.85rem 1.25rem;
+  }
+
+  .welcome-card {
+    padding: 1.2rem 1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.35rem;
+  }
+
+  .card-value {
+    font-size: 1.62rem;
+  }
+
+  .badge-item {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.74rem;
+  }
+}
