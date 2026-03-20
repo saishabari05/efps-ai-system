@@ -12,5 +12,6 @@ db = client["efps_database"]
 # Create collection
 students_collection = db["students"]
 teachers_collection = db["teachers"]
+admin_collection = db["admin"]
 
 print("✅ Connected to Local MongoDB")
