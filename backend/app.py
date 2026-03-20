@@ -15,8 +15,12 @@ import smtplib
 from email.mime.text import MIMEText
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-
 app = Flask(__name__)
+CORS(app)
+
+
+
+
 
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', '587'))
@@ -341,5 +345,10 @@ def predict_risk(attendance, internal_avg, assignment):
     return levels[prediction[0]]
 
 
+
+import os
+
 if __name__ == "__main__":
-    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+    
