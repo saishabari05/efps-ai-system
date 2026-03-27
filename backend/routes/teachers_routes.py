@@ -1,5 +1,6 @@
 import os
 import smtplib
+import re
 from datetime import datetime, timezone
 from email.message import EmailMessage
 
@@ -10,6 +11,60 @@ from database.db import teachers_collection, students_collection
 from auth_utils import role_required
 
 teacher_bp = Blueprint("teacher", __name__)
+
+
+def normalize_semester(value):
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+
+    digit_match = re.search(r"\d+", text)
+    if digit_match:
+        return digit_match.group(0)
+
+    return text
+
+
+def normalize_section(value):
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+
+    normalized = re.sub(r"\s+", "", text)
+    normalized = re.sub(r"^(section|sec)\.?", "", normalized)
+    return normalized
+
+
+def student_matches_subject(student, subject):
+    subject_semester = normalize_semester(subject.get("semester"))
+    subject_section = normalize_section(subject.get("section"))
+    student_semester = normalize_semester(student.get("semester"))
+    student_section = normalize_section(student.get("section"))
+
+    semester_matches = not subject_semester or student_semester == subject_semester
+    section_matches = not subject_section or student_section == subject_section
+    return semester_matches and section_matches
+
+
+def get_students_for_subjects(subjects):
+    all_students = list(students_collection.find({}, {"password": 0}))
+    matched_students = []
+    seen_ids = set()
+
+    for subject in subjects:
+        for student in all_students:
+            if not student_matches_subject(student, subject):
+                continue
+
+            student_id = str(student.get("_id"))
+            if student_id in seen_ids:
+                continue
+
+            student["_id"] = student_id
+            matched_students.append(student)
+            seen_ids.add(student_id)
+
+    return matched_students
 
 
 def to_subject_key(subject_name):
@@ -114,20 +169,7 @@ def get_students_for_teacher(teacher_id):
 
         subjects = teacher.get("subjects", [])
 
-        students_list = []
-
-        for subject in subjects:
-            sem = subject.get("semester")
-            sec = subject.get("section")
-
-            students = students_collection.find(
-                {"semester": sem, "section": sec},
-                {"password": 0}
-            )
-
-            for student in students:
-                student["_id"] = str(student["_id"])
-                students_list.append(student)
+        students_list = get_students_for_subjects(subjects)
 
         return jsonify(students_list), 200
 
@@ -290,21 +332,12 @@ def get_high_risk_students(teacher_id):
 
         risk_students = []
 
-        for subject in subjects:
-            sem = subject.get("semester")
-            sec = subject.get("section")
+        for student in get_students_for_subjects(subjects):
+            attendance = student.get("attendancePercentage", 0)
 
-            students = students_collection.find(
-                {"semester": sem, "section": sec}
-            )
-
-            for student in students:
-                attendance = student.get("attendancePercentage", 0)
-
-                if attendance < 65:
-                    student["_id"] = str(student["_id"])
-                    student["riskLevel"] = "High"
-                    risk_students.append(student)
+            if attendance < 65:
+                student["riskLevel"] = "High"
+                risk_students.append(student)
 
         return jsonify(risk_students), 200
 

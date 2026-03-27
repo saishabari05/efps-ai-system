@@ -7,7 +7,7 @@ import {
 } from "recharts";
 
 // ─── API CONFIG ──────────────────────────────────────────────────────────────
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://efps-ai-system.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:10000";
 
 const getTeacherAuthHeaders = () => {
   try {
@@ -574,7 +574,7 @@ const NAV_ITEMS = [
   { id: "profile",     icon: "◯", label: "Profile", sep: true },
 ];
 
-function Sidebar({ active, onNav, teacher, highRiskCount = 0 }) {
+function Sidebar({ active, onNav, teacher, highRiskCount = 0, isMobile = false, isOpen = false, onClose }) {
   const teacherName = teacher?.name || teacher?.fullName || "Teacher";
   const teacherDept = teacher?.dept ? `Dept. of ${teacher.dept}` : "Department";
   const navItems = NAV_ITEMS.map((item) =>
@@ -584,7 +584,19 @@ function Sidebar({ active, onNav, teacher, highRiskCount = 0 }) {
   );
 
   return (
-    <aside style={S.sidebar}>
+    <aside style={{
+      ...S.sidebar,
+      ...(isMobile
+        ? {
+            position: "fixed",
+            left: 0,
+            top: 0,
+            transform: isOpen ? "translateX(0)" : "translateX(-105%)",
+            transition: "transform 0.25s ease",
+            boxShadow: isOpen ? "0 24px 40px rgba(15,28,63,0.35)" : "none",
+          }
+        : {}),
+    }}>
       {/* glow orbs */}
       <div style={{ position:"absolute", top:-60, right:-60, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(59,130,246,0.12),transparent 70%)", pointerEvents:"none" }} />
       <div style={{ position:"absolute", bottom:40, left:-80, width:220, height:220, borderRadius:"50%", background:"radial-gradient(circle,rgba(30,77,183,0.15),transparent 70%)", pointerEvents:"none" }} />
@@ -608,7 +620,10 @@ function Sidebar({ active, onNav, teacher, highRiskCount = 0 }) {
         {navItems.map((item) => (
           <div key={item.id}>
             {item.sep && <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", letterSpacing:"0.1em", textTransform:"uppercase", padding:"0 8px", marginBottom:8, marginTop:16 }}>Account</div>}
-            <NavItem item={item} active={active === item.id} onClick={() => onNav(item.id)} />
+            <NavItem item={item} active={active === item.id} onClick={() => {
+              onNav(item.id);
+              if (isMobile && onClose) onClose();
+            }} />
           </div>
         ))}
       </nav>
@@ -668,7 +683,7 @@ const PAGE_META = {
   detail:      { title: "Student Detail",        sub: "Viewing student record" },
 };
 
-function Topbar({ page, onLogout, studentCount = 0, teacher }) {
+function Topbar({ page, onLogout, studentCount = 0, teacher, showMenuButton = false, onMenuToggle }) {
   const baseMeta = PAGE_META[page] || PAGE_META.overview;
   const meta =
     page === "students"
@@ -681,23 +696,43 @@ function Topbar({ page, onLogout, studentCount = 0, teacher }) {
 
   return (
     <header style={S.topbar}>
+      {showMenuButton && (
+        <button
+          onClick={onMenuToggle}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            border: "1px solid #e2e8f8",
+            background: "#fff",
+            color: "#1e4db7",
+            fontSize: 18,
+            lineHeight: 1,
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+          aria-label="Toggle menu"
+        >
+          ☰
+        </button>
+      )}
       <div style={{ flex:1 }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#0f1c3f" }}>{meta.title}</div>
-        <div style={{ fontSize:12, color:"#94a3b8", marginTop:1 }}>{meta.sub}</div>
+        {!showMenuButton && <div style={{ fontSize:12, color:"#94a3b8", marginTop:1 }}>{meta.sub}</div>}
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-        <div style={{ textAlign:"right" }}>
+        <div style={{ textAlign:"right", display: showMenuButton ? "none" : "block" }}>
           <div style={{ fontSize:13.5, fontWeight:600, color:"#0f1c3f" }}>{teacherName}</div>
           <div style={{ fontSize:11.5, color:"#64748b" }}>{teacherSummary}</div>
         </div>
-        <Avatar name={teacherName} size={38} style={{ boxShadow:"0 0 0 3px rgba(59,130,246,0.15)", cursor:"pointer" }} />
+        <Avatar name={teacherName} size={showMenuButton ? 32 : 38} style={{ boxShadow:"0 0 0 3px rgba(59,130,246,0.15)", cursor:"pointer" }} />
         <button
           onClick={onLogout}
-          style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:8, border:"1px solid #e2e8f8", background:"#fff", color:"#64748b", fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit" }}
+          style={{ display:"flex", alignItems:"center", gap:6, padding:showMenuButton ? "7px 10px" : "7px 14px", borderRadius:8, border:"1px solid #e2e8f8", background:"#fff", color:"#64748b", fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit" }}
           onMouseEnter={e => { e.target.style.borderColor="#ef4444"; e.target.style.color="#ef4444"; e.target.style.background="#fff5f5"; }}
           onMouseLeave={e => { e.target.style.borderColor="#e2e8f8"; e.target.style.color="#64748b"; e.target.style.background="#fff"; }}
         >
-          ↪ Logout
+          {showMenuButton ? "Logout" : "↪ Logout"}
         </button>
       </div>
     </header>
@@ -705,7 +740,7 @@ function Topbar({ page, onLogout, studentCount = 0, teacher }) {
 }
 
 // ─── OVERVIEW PAGE ────────────────────────────────────────────────────────────
-function OverviewPage({ students = [] }) {
+function OverviewPage({ students = [], isMobile = false }) {
   // Calculate stats from real data
   const calculateStats = () => {
     if (!students || students.length === 0) {
@@ -768,7 +803,7 @@ function OverviewPage({ students = [] }) {
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile ? "1fr" : "repeat(4,1fr)", gap:16, marginBottom:24 }}>
         <StatCard icon="🎓" value={stats.total}    label="Total Assigned Students" change={stats.total > 0 ? "✓" : ""} changeUp accent="blue" />
         <StatCard icon="⚠️" value={stats.highRisk}     label="High Risk Students"       change={stats.highRisk > 0 ? "⚠️" : "✓"} changeUp={false} accent="red" />
         <StatCard icon="📋" value={stats.avgAtt !== null ? `${stats.avgAtt}%` : "—"} label="Average Attendance"       change="" changeUp accent="green" />
@@ -776,7 +811,7 @@ function OverviewPage({ students = [] }) {
       </div>
 
       {/* Charts row */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1.8fr", gap:16, marginBottom:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile ? "1fr" : "1fr 1.8fr", gap:16, marginBottom:16 }}>
         {/* Pie */}
         <div style={S.card}>
           <CardHeader title="Risk Distribution" subtitle="Current semester" badge={stats.total + " total"} />
@@ -846,7 +881,7 @@ function OverviewPage({ students = [] }) {
 }
 
 // ─── MY STUDENTS PAGE ─────────────────────────────────────────────────────────
-function StudentsPage({ students, onViewDetail, loading }) {
+function StudentsPage({ students, onViewDetail, loading, isMobile = false }) {
   const [search, setSearch] = useState("");
   const [semFilter, setSemFilter] = useState("All");
   const [riskFilter, setRiskFilter] = useState("All");
@@ -882,7 +917,7 @@ function StudentsPage({ students, onViewDetail, loading }) {
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       {/* Toolbar */}
-      <div style={{ display:"flex", gap:12, marginBottom:16, alignItems:"center" }}>
+      <div style={{ display:"flex", gap:12, marginBottom:16, alignItems:"center", flexWrap:isMobile ? "wrap" : "nowrap" }}>
         <div style={{ position:"relative", flex:1 }}>
           <span style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", color:"#94a3b8", fontSize:14 }}>🔍</span>
           <input
@@ -904,7 +939,8 @@ function StudentsPage({ students, onViewDetail, loading }) {
 
       {/* Table */}
       <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e2e8f8", overflow:"hidden", boxShadow:"0 1px 3px rgba(15,28,63,0.06)" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+        <div style={{ overflowX: "auto" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse", minWidth: isMobile ? 820 : "unset" }}>
           <thead>
             <tr style={{ background:"#f8faff", borderBottom:"1px solid #e2e8f8" }}>
               {["Student","Student ID","Semester","Section","Attendance","Risk Level",""].map(h => (
@@ -918,6 +954,7 @@ function StudentsPage({ students, onViewDetail, loading }) {
             ))}
           </tbody>
         </table>
+        </div>
         {filtered.length === 0 && (
           <div style={{ padding:"40px 0", textAlign:"center", color:"#94a3b8", fontSize:14 }}>No students match your search.</div>
         )}
@@ -980,7 +1017,7 @@ function StudentRow({ student: s, isLast, onView }) {
 }
 
 // ─── STUDENT DETAIL PAGE ──────────────────────────────────────────────────────
-function DetailPage({ student, onBack, allStudents = [] }) {
+function DetailPage({ student, onBack, allStudents = [], isMobile = false }) {
   // Ensure we have proper student data (handle both formats)
   const studentName = student.name || student.fullName || "Student";
   const studentId = student.id || student.studentId || "N/A";
@@ -1048,7 +1085,7 @@ function DetailPage({ student, onBack, allStudents = [] }) {
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       {/* Header */}
-      <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:24 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:24, flexWrap: isMobile ? "wrap" : "nowrap" }}>
         <button onClick={onBack}
           style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:8, border:"1px solid #e2e8f8", background:"#fff", cursor:"pointer", fontSize:13, color:"#64748b", fontFamily:"inherit" }}
           onMouseEnter={e => e.currentTarget.style.borderColor="#3b82f6"}
@@ -1059,7 +1096,7 @@ function DetailPage({ student, onBack, allStudents = [] }) {
         <Avatar name={studentName} size={50} />
         <div style={{ flex:1 }}>
           <div style={{ fontSize:18, fontWeight:700 }}>{studentName}</div>
-          <div style={{ display:"flex", gap:14, marginTop:4, fontSize:12.5, color:"#64748b" }}>
+          <div style={{ display:"flex", gap:14, marginTop:4, fontSize:12.5, color:"#64748b", flexWrap: isMobile ? "wrap" : "nowrap" }}>
             <span>🆔 {studentId}</span>
             <span>📅 Semester {studentSem}</span>
             <span>🏛 Section {studentSec}</span>
@@ -1069,7 +1106,7 @@ function DetailPage({ student, onBack, allStudents = [] }) {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1fr", gap:16, marginBottom:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile ? "1fr" : "1.4fr 1fr", gap:16, marginBottom:16 }}>
         {/* Attendance History */}
         <div style={S.card}>
           <CardHeader title="Attendance History" subtitle="Last 6 months" />
@@ -1116,7 +1153,7 @@ function DetailPage({ student, onBack, allStudents = [] }) {
       </div>
 
       {/* Bottom Row */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile ? "1fr" : "1fr 1fr", gap:16 }}>
         {/* Radar */}
         <div style={S.card}>
           <CardHeader title="Subject Performance" subtitle="Score breakdown" />
@@ -1180,7 +1217,7 @@ function DetailPage({ student, onBack, allStudents = [] }) {
 }
 
 // ─── ATTENDANCE PAGE ──────────────────────────────────────────────────────────
-function AttendancePage({ students = [], toast, teacher }) {
+function AttendancePage({ students = [], toast, teacher, isMobile = false }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [status, setStatus] = useState({});
   const [selectedSubjectKey, setSelectedSubjectKey] = useState("");
@@ -1258,7 +1295,7 @@ function AttendancePage({ students = [], toast, teacher }) {
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       {/* Controls */}
-      <div style={{ display:"flex", gap:12, marginBottom:20, alignItems:"center" }}>
+      <div style={{ display:"flex", gap:12, marginBottom:20, alignItems:"center", flexWrap:isMobile ? "wrap" : "nowrap" }}>
         <input type="date" value={date} onChange={e => setDate(e.target.value)}
           style={{ padding:"9px 14px", borderRadius:8, border:"1px solid #e2e8f8", fontFamily:"inherit", fontSize:13.5, color:"#0f1c3f", background:"#fff", outline:"none", cursor:"pointer" }} />
         <select 
@@ -1274,7 +1311,7 @@ function AttendancePage({ students = [], toast, teacher }) {
             ))
           )}
         </select>
-        <div style={{ marginLeft:"auto", fontSize:13, color:"#1e4db7", background:"#e8f0fe", padding:"8px 14px", borderRadius:8, border:"1px solid #bfdbfe", fontWeight:500 }}>
+        <div style={{ marginLeft:isMobile ? 0 : "auto", width:isMobile ? "100%" : "auto", fontSize:13, color:"#1e4db7", background:"#e8f0fe", padding:"8px 14px", borderRadius:8, border:"1px solid #bfdbfe", fontWeight:500 }}>
           <strong>{presentCount}</strong> / <strong>{studentList.length}</strong> marked present
         </div>
       </div>
@@ -1292,7 +1329,7 @@ function AttendancePage({ students = [], toast, teacher }) {
         )}
       </div>
 
-      <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
+      <div style={{ display:"flex", justifyContent:isMobile ? "stretch" : "flex-end", gap:10, flexWrap:isMobile ? "wrap" : "nowrap" }}>
         <button onClick={() => setStatus({})}
           disabled={submitting}
           style={{ padding:"10px 20px", borderRadius:9, border:"1px solid #e2e8f8", background:"#fff", color:"#64748b", fontSize:14, fontWeight:600, cursor:submitting ? "not-allowed" : "pointer", fontFamily:"inherit", opacity: submitting ? 0.5 : 1 }}>
@@ -1343,7 +1380,7 @@ function AttCard({ student, idx, status, onMark }) {
 }
 
 // ─── PERFORMANCE ENTRY PAGE ───────────────────────────────────────────────────
-function PerformancePage({ students = [], toast, teacher }) {
+function PerformancePage({ students = [], toast, teacher, isMobile = false }) {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedSubjectKey, setSelectedSubjectKey] = useState("");
 
@@ -1366,7 +1403,7 @@ function PerformancePage({ students = [], toast, teacher }) {
     },
     layout: {
       display: "grid",
-      gridTemplateColumns: "2fr 1fr",
+      gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr",
       gap: 18,
       alignItems: "start",
     },
@@ -1586,7 +1623,7 @@ function PerformancePage({ students = [], toast, teacher }) {
               </select>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
               <div>
                 <label style={PERF.fieldLabel}>Internal 1</label>
                 <input
@@ -1713,7 +1750,7 @@ function PerformancePage({ students = [], toast, teacher }) {
 }
 
 // ─── RISK MONITORING PAGE ────────────────────────────────────────────────────
-function RiskPage({ onViewDetail, students = [] }) {
+function RiskPage({ onViewDetail, students = [], isMobile = false }) {
   const [search, setSearch] = useState("");
 
   // Enrich students with risk data and sort by risk score
@@ -1754,7 +1791,7 @@ function RiskPage({ onViewDetail, students = [] }) {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
         <div style={{ background: "#fff", borderRadius: 12, padding: 16, border: "1px solid #e2e8f8", boxShadow: "0 1px 3px rgba(15,28,63,0.06)" }}>
           <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Total High-Risk</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: "#ef4444" }}>{enrichedStudents.length}</div>
@@ -1811,7 +1848,8 @@ function RiskPage({ onViewDetail, students = [] }) {
 
       {/* Risk Students Table */}
       <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f8", overflow: "hidden", boxShadow: "0 1px 3px rgba(15,28,63,0.06)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 860 : "unset" }}>
           <thead>
             <tr style={{ background: "#f8faff", borderBottom: "1px solid #e2e8f8" }}>
               {["Student", "Student ID", "Semester", "Attendance", "Avg Score", "Risk Score", ""].map((h) => (
@@ -1838,6 +1876,7 @@ function RiskPage({ onViewDetail, students = [] }) {
             ))}
           </tbody>
         </table>
+        </div>
         {filtered.length === 0 && (
           <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
             {enrichedStudents.length === 0 ? "No high-risk students" : "No matching students"}
@@ -1946,7 +1985,7 @@ function RiskStudentRow({ student: s, isLast, onView }) {
 }
 
 // ─── PROFILE PAGE ─────────────────────────────────────────────────────────────
-function ProfilePage({ toast, teacher, students = [] }) {
+function ProfilePage({ toast, teacher, students = [], isMobile = false }) {
   const teacherName = teacher?.name || teacher?.fullName || "Teacher";
   const teacherEmail = teacher?.email || "Not available";
   const teacherDept = teacher?.dept || "Not available";
@@ -1975,13 +2014,13 @@ function ProfilePage({ toast, teacher, students = [] }) {
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       {/* Profile Header */}
-      <div style={{ background:"linear-gradient(135deg,#0f1c3f 0%,#1a2f5a 100%)", borderRadius:12, padding:32, marginBottom:16, display:"flex", alignItems:"center", gap:20, position:"relative", overflow:"hidden" }}>
+      <div style={{ background:"linear-gradient(135deg,#0f1c3f 0%,#1a2f5a 100%)", borderRadius:12, padding:isMobile ? 20 : 32, marginBottom:16, display:"flex", alignItems:"center", gap:20, position:"relative", overflow:"hidden", flexWrap:isMobile ? "wrap" : "nowrap" }}>
         <div style={{ position:"absolute", right:-60, top:-60, width:250, height:250, borderRadius:"50%", background:"radial-gradient(circle,rgba(59,130,246,0.15),transparent 70%)", pointerEvents:"none" }} />
         <Avatar name={teacherName} size={80} style={{ border:"3px solid rgba(255,255,255,0.25)" }} />
         <div>
           <div style={{ fontSize:22, fontWeight:700, color:"#fff" }}>{teacherName}</div>
           <div style={{ fontSize:14, color:"rgba(255,255,255,0.6)", marginTop:4 }}>{teacherDept !== "Not available" ? `Department of ${teacherDept}` : "Department info unavailable"}</div>
-          <div style={{ display:"flex", gap:24, marginTop:14 }}>
+          <div style={{ display:"flex", gap:24, marginTop:14, flexWrap:isMobile ? "wrap" : "nowrap" }}>
             {[[String(students.length),"Students"],[String(subjects.length),"Subjects"],[String(new Set(students.map((student) => String(student.section))).size),"Sections"],[String(new Set(students.map((student) => String(student.semester))).size),"Semesters"]].map(([val,lbl]) => (
               <div key={lbl}>
                 <div style={{ fontSize:20, fontWeight:700, color:"#fff", fontFamily:"'DM Mono',monospace" }}>{val}</div>
@@ -1992,7 +2031,7 @@ function ProfilePage({ toast, teacher, students = [] }) {
         </div>
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile ? "1fr" : "1fr 1fr", gap:16 }}>
         {/* Info Form */}
         <div style={S.card}>
           <CardHeader title="Personal Information" />
@@ -2048,6 +2087,8 @@ export default function EFPSDashboard() {
   const [toastVisible, setToastVisible] = useState(false);
   const [students, setStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 1024 : false));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [teacherProfile, setTeacherProfile] = useState(null);
   const [teacherSession] = useState(() => {
     try {
@@ -2106,6 +2147,22 @@ export default function EFPSDashboard() {
     fetchStudents();
   }, [teacherSession?.teacherId]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
+
   const showToast = useCallback((msg) => {
     setToastMsg(msg);
     setToastVisible(true);
@@ -2120,6 +2177,7 @@ export default function EFPSDashboard() {
   const handleNav = (id) => {
     setPage(id);
     if (id !== "detail") setSelectedStudent(null);
+    if (isMobile) setSidebarOpen(false);
   };
 
   const handleLogout = () => {
@@ -2146,27 +2204,37 @@ export default function EFPSDashboard() {
         ::-webkit-scrollbar { width: 5px; } 
         ::-webkit-scrollbar-track { background: transparent; } 
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        .td-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 28, 63, 0.35);
+          z-index: 90;
+        }
       `}</style>
 
-      <div style={S.app}>
+      <div style={{ ...S.app, height: "100dvh" }}>
+        {isMobile && sidebarOpen && <div className="td-overlay" onClick={() => setSidebarOpen(false)} />}
         <Sidebar
           active={page === "detail" ? "students" : page}
           onNav={handleNav}
           teacher={teacherData}
           highRiskCount={highRiskCount}
+          isMobile={isMobile}
+          isOpen={isMobile ? sidebarOpen : true}
+          onClose={() => setSidebarOpen(false)}
         />
 
         <div style={S.main}>
-          <Topbar page={page} studentCount={students.length} teacher={teacherData} onLogout={handleLogout} />
+          <Topbar page={page} studentCount={students.length} teacher={teacherData} onLogout={handleLogout} showMenuButton={isMobile} onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
-          <div style={S.content}>
-            {page === "overview"    && <OverviewPage students={students} />}
-            {page === "students"    && <StudentsPage students={students} onViewDetail={goToDetail} loading={loadingStudents} />}
-            {page === "detail"      && selectedStudent && <DetailPage student={selectedStudent} allStudents={students} onBack={() => setPage("students")} />}
-            {page === "attendance"  && <AttendancePage students={students} toast={showToast} teacher={teacherData} />}
-            {page === "performance" && <PerformancePage students={students} toast={showToast} teacher={teacherData} />}
-            {page === "risk"        && <RiskPage onViewDetail={goToDetail} students={students} />}
-            {page === "profile"     && <ProfilePage toast={showToast} teacher={teacherData} students={students} />}
+          <div style={{ ...S.content, padding: isMobile ? 14 : 28 }}>
+            {page === "overview"    && <OverviewPage students={students} isMobile={isMobile} />}
+            {page === "students"    && <StudentsPage students={students} onViewDetail={goToDetail} loading={loadingStudents} isMobile={isMobile} />}
+            {page === "detail"      && selectedStudent && <DetailPage student={selectedStudent} allStudents={students} onBack={() => setPage("students")} isMobile={isMobile} />}
+            {page === "attendance"  && <AttendancePage students={students} toast={showToast} teacher={teacherData} isMobile={isMobile} />}
+            {page === "performance" && <PerformancePage students={students} toast={showToast} teacher={teacherData} isMobile={isMobile} />}
+            {page === "risk"        && <RiskPage onViewDetail={goToDetail} students={students} isMobile={isMobile} />}
+            {page === "profile"     && <ProfilePage toast={showToast} teacher={teacherData} students={students} isMobile={isMobile} />}
           </div>
         </div>
       </div>
